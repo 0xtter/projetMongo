@@ -6,9 +6,13 @@ import json
 import dateutil.parser
 import time
 import logging
+import os
 
 
-client = MongoClient("mongodb+srv://user:password@yyyyyyyyyy.xxxxxxxxx.mongodb.net/?retryWrites=true&w=majority", server_api=ServerApi('1'))
+ATLAS_URI = os.environ.get("ATLAS_URI", None)
+DB_NAME = os.environ.get("DB_NAME", None)
+
+client = MongoClient(ATLAS_URI, server_api=ServerApi('1'))
 
 db = client.vls
 
@@ -37,6 +41,7 @@ vlilles_to_insert = [
     for elem in vlilles
 ]
 
+
 try: 
     db.stations.insert_many(vlilles_to_insert, ordered=False)
 except:
@@ -58,6 +63,8 @@ while True:
     ]
     
     for data in datas:
+        logger.info("Inserting into databse")
         db.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, { "$set": data }, upsert=True)
+        logger.info("Insert sucessfull")
 
     time.sleep(10)
