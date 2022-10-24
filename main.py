@@ -4,7 +4,6 @@ import time
 
 import database.db_manage
 
-
 def setupLogger():
     global logger
     logging.config.fileConfig('logging.conf')

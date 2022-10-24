@@ -1,10 +1,10 @@
 import json
+import logging
 
 import dateutil.parser
 import requests
 
-# from main import logger
-
+logger = logging.getLogger('project')
 
 def get_vlille():
     """_summary_

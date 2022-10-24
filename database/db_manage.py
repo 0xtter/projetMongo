@@ -1,7 +1,10 @@
-from vlille.vlille_api import *
+import logging
+import vlille.vlille_api as vlille_api
 
-from database.db_conn import db_vls
-from main import logger
+from db_conn import db_vls
+
+logger = logging.getLogger('project')
+
 
 def init_vlille_data():
     """ Init database data with vlille data
