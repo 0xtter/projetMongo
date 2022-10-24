@@ -1,45 +1,33 @@
-
-import requests
 import json
-import dateutil.parser
-import time
 import logging
 import logging.config
+from operator import indexOf
+import time
+
+import dateutil.parser
+import requests
 
 from db_conn import client
-from vlille_api import get_vlille
+from vlille_api import get_vlille, vlilles_to_insert
+
 
 def setupLogger():
     global logger
     logging.config.fileConfig('logging.conf')
     logger = logging.getLogger('project')
 
+
 def main():
     db = client.vls
     vlilles = get_vlille()
-
-    vlilles_to_insert = [
-        {
-            '_id': elem.get('fields', {}).get('libelle'),
-            'name': elem.get('fields', {}).get('nom', '').title(),
-            'geometry': elem.get('geometry'),
-            'size': elem.get('fields', {}).get('nbvelosdispo') + elem.get('fields', {}).get('nbplacesdispo'),
-            'source': {
-                'dataset': 'Lille',
-                'id_ext': elem.get('fields', {}).get('libelle')
-            },
-            'tpe': elem.get('fields', {}).get('type', '') == 'AVEC TPE'
-        }
-        for elem in vlilles
-    ]
     
-    try: 
+    try:
         db.stations.insert_many(vlilles_to_insert, ordered=False)
     except:
         pass
 
-    while True:
-        print('update')
+    while True: 
+        logger.debug("Start Updating the databse")
         vlilles = get_vlille()
         datas = [
             {
@@ -50,17 +38,20 @@ def main():
             }
             for elem in vlilles
         ]
+
+        nb_data_to_insert = len(datas)
         
+        logger.debug(f"Inserting into databse {nb_data_to_insert} elements")
+
         for data in datas:
-            logger.info("Inserting into databse")
-            db.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, { "$set": data }, upsert=True)
-            logger.info("Insert sucessfull")
+            logger.debug(f"Element {datas.index(data)+1}/{nb_data_to_insert}")
+            db.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, {
+                                "$set": data}, upsert=True)
 
         time.sleep(10)
 
 
-    
 if __name__ == "__main__":
     setupLogger()
-    logger.info("test")
+    logger.debug("Starting the application...")
     main()

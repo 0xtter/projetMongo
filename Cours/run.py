@@ -1,13 +1,13 @@
 
-from pymongo.mongo_client import MongoClient
-from pymongo.server_api import ServerApi
-import requests
 import json
-import dateutil.parser
-import time
 import logging
 import os
+import time
 
+import dateutil.parser
+import requests
+from pymongo.mongo_client import MongoClient
+from pymongo.server_api import ServerApi
 
 ATLAS_URI = os.environ.get("ATLAS_URI", None)
 DB_NAME = os.environ.get("DB_NAME", None)
