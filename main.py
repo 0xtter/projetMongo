@@ -17,29 +17,30 @@ def setupLogger():
 
 def func_test():
     # Test avec de la data fait 'main'
-    db_vls.places.drop()
+    # db_vls.places.drop()
 
-    logger.debug(db_vls.places.create_index([("test", GEO2D)]))    
-    logger.debug(db_vls.places.insert_many([{"test": [2, 5]},
-                                {"test": [30, 5]},
-                                {"test": [1, 2]},
-                                {"test": [4, 4]}]).inserted_ids)
+    # logger.debug(db_vls.places.create_index([("test", GEO2D)]))    
+    # logger.debug(db_vls.places.insert_many([{"test": [2, 5]},
+    #                             {"test": [30, 5]},
+    #                             {"test": [1, 2]},
+    #                             {"test": [4, 4]}]).inserted_ids)
 
-    logger.info(db_vls.places.find_one())
-    logger.info(db_vls.places.index_information())
+    # logger.info(db_vls.places.find_one())
+    # logger.info(db_vls.places.index_information())
 
-    for doc in db_vls.places.find({"test": {"$near": [3, 6]}}).limit(3):
-        pprint.pprint(doc) # Fonctionne!
+    # for doc in db_vls.places.find({"test": {"$near": [3, 6]}}).limit(3):
+    #     pprint.pprint(doc) # Fonctionne!
     # Fin test
 
     database.db_manage.init_vlille_data()
 
-    db_vls.stations.create_index([("geometry", GEO2D)])
+    # db_vls.stations.create_index([("geometry", GEO2D)])
 
     logger.info(db_vls.stations.index_information())
     logger.debug('stations:')
 
     pprint.pprint(db_vls.stations.find_one())
+    
     for doc in db_vls.stations.find({'geometry':{"coordinates": {"$near" : [ 3.048567, 50.634268 ],"$maxDistance": 30,"$minDistance": 0}}}).limit(3):
         pprint.pprint(doc)
     exit()

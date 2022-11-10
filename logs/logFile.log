@@ -1,7 +1,5 @@
-2022-11-10 22:11:07,122 - project - DEBUG - Starting the application...
-2022-11-10 22:11:07,571 - project - DEBUG - test_2d
-2022-11-10 22:11:07,615 - project - DEBUG - [ObjectId('636d68eb4c904594e103dfdd'), ObjectId('636d68eb4c904594e103dfde'), ObjectId('636d68eb4c904594e103dfdf'), ObjectId('636d68eb4c904594e103dfe0')]
-2022-11-10 22:11:07,643 - project - INFO - {'_id': ObjectId('636d68eb4c904594e103dfdd'), 'test': [2, 5]}
-2022-11-10 22:11:07,674 - project - INFO - {'_id_': {'v': 2, 'key': [('_id', 1)]}, 'test_2d': {'v': 2, 'key': [('test', '2d')]}}
-2022-11-10 22:11:07,756 - project - DEBUG - stations collection dropped sucessfuly
-2022-11-10 22:11:07,756 - project - DEBUG - Getting vlille infos
+2022-11-10 23:16:06,793 - project - DEBUG - Starting the application...
+2022-11-10 23:16:07,213 - project - DEBUG - stations collection dropped sucessfuly
+2022-11-10 23:16:07,214 - project - DEBUG - Getting vlille infos
+2022-11-10 23:16:07,960 - project - INFO - {'_id_': {'v': 2, 'key': [('_id', 1)]}}
+2022-11-10 23:16:07,960 - project - DEBUG - stations:
