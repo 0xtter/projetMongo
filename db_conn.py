@@ -13,4 +13,4 @@ load_dotenv(os.path.join(BASEDIR, '.env'), verbose=True)
 ATLAS_URI = os.getenv("ATLAS_URI")
 
 client = MongoClient(ATLAS_URI, server_api=ServerApi('1'))
-db_vls = client.vls
+db_vls = client['vls']
