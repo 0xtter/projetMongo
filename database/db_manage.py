@@ -34,13 +34,13 @@ def update_vlille_data():
     datas = vlille_api.updated_vlille()
     nb_data_to_insert = len(datas)
     
-    logger.info(f"Updating databse : {nb_data_to_insert} elements to update")
+    logger.info(f"Updating databse : {nb_data_to_insert} elements to update...")
 
     for data in datas:
-        db_vls.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, {
-                            "$set": data}, upsert=True)
+        db_vls.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, {"$set": data}, upsert=True)
                             
-        logger.info(f"Element {datas.index(data)+1}/{nb_data_to_insert} updated!")
+        logger.debug(f"Element {datas.index(data)+1}/{nb_data_to_insert} updated!")
+    logger.info(f'{nb_data_to_insert} Stations have been updated!')
 
 
 def get_vlille_around(x, y, range = 10):
