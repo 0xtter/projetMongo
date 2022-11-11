@@ -1,20 +1,16 @@
-import json
 import logging
 import logging.config
 import time
 
-import database.db_manage
-from db_conn import db_vls
 from pymongo import GEO2D
-import pprint
 
+import database.db_manage
 
 
 def setupLogger():
     global logger
     logging.config.fileConfig('logging.conf')
     logger = logging.getLogger('project')
-
 
 
 def main():
