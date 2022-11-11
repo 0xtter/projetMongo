@@ -24,10 +24,9 @@ def display_beautiful_dict(d):
 
 
 def integer_input(msg, min=None, max=None):
-    display_text(msg)
     while True:
         try:
-            i = input()
+            i = input(msg + ' : ')
             choice = int(i)
             if min and max and min <= choice <= max:
                 return choice
@@ -99,12 +98,11 @@ def display_business_menu():
     elif choice == 4:
         pass
     elif choice == 5:
-        pass
+        return give_stations_under_ratio()
 
 
 def find_station_with_name():
-    display_text("Enter the name of a station (enter 0 to go back) :")
-    search = input()
+    search = input("Enter the name of a station (enter 0 to go back) : ")
 
     if search == "0":
         return display_business_menu()
@@ -119,6 +117,7 @@ def find_station_with_name():
         display_title("No matching station name.")
     else:
         display_title(f"Found : {found}")
+        input("Press ENTER to continue...")
 
     return display_business_menu()
 
@@ -176,6 +175,8 @@ def menu_update_station():
     else:
         display_title("Station not updated")
     
+    input("Press ENTER to continue...")
+
     return display_business_menu()
 
 
@@ -212,10 +213,29 @@ def menu_delete_station():
             display_title("Station deleted")
         else:
             display_title("Station not deleted")
-    
     else:
         display_text("Abort deletion")
-        return display_business_menu()
+    
+    input("Press ENTER to continue...")
+
+    return display_business_menu()
+    
+
+def give_stations_under_ratio():
+
+    result = database.db_manage.get_stations_under_ratio()
+    
+    size = 0
+    for doc in result:
+        size += 1
+        display_beautiful_dict(doc)
+    
+    display_text(f"Stations under ratio (found {size}) displayed (sorted by date).")
+    input("Press ENTER to continue...")
+
+    display_title("Task completed")
+    
+    return display_business_menu()
 
 
 if __name__ == "__main__":

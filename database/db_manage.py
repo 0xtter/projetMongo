@@ -100,7 +100,7 @@ def update_station(_id, newvalues_dict):
     
     Returns:
         Boolean: True if update went well, False otherwise
-    """    
+    """
     logger.info(f"Updating station _id={_id} with values {newvalues_dict}")
 
     custom_filter = {'_id': _id}
@@ -148,3 +148,84 @@ def delete_station(_id):
 
     except Exception as e:
         logger.error(f"Something went wrong when deleting station {_id} : {e}")
+
+
+def get_stations_under_ratio(ratio_level=0.2):
+    """ Between 6pm and 7pm & from monday to friday
+
+    Args:
+        ratio_level (float, optional): ratio bike/total_stand. Defaults to 0.2.
+
+    Returns:
+        CommandCursor: result of the research
+    """    
+
+    total_stands = {'$sum': ['$bike_availbale', '$stand_availbale'] }
+    ratio = { "$divide": [ "$bike_availbale", total_stands ] }
+
+    pipeline = [
+        {
+        # combine stations and datas collection
+        '$lookup': {
+            'from': 'stations', 
+            'localField': 'station_id',
+            'foreignField': 'fields.libelle', 
+            'as': 'station_info'
+            }
+        },
+        {
+        # prevent division from zero in ratio division
+        '$match': {
+            '$and': [
+                {
+                    'bike_availbale': {'$ne': 0}
+                },
+                {
+                    'stand_availbale': {'$ne': 0}
+                }
+            ]
+            }  
+        },
+        { # Add station name to output doc
+        '$addFields': {
+            'nom'  : "$station_info.fields.nom"
+            }
+        },
+        {
+            '$unwind': "$nom"
+        },
+        {
+        # set output doc 
+        '$project': {
+            '_id': 0,
+            'station_id': { '$toInt': '$station_id'},
+            'ratio': ratio,
+            'dayOfWeek': { '$dayOfWeek': "$date" },     # <-- important
+            'date': { '$toString': "$date" },
+            'hour': { '$hour': "$date" },
+            'bike_availbale': 1,
+            'stand_availbale': 1,
+            'nom': 1,
+            }
+        },
+        { 
+        # only from monday to friday (sun=1 -> sat=7)
+        # only a ratio <= 0.2
+        # only between 18 and 19
+        '$match': {
+            'dayOfWeek': { '$in': [2, 3, 4, 5, 6] },
+            'ratio': { '$lte': ratio_level },
+            'hour': { '$eq': 18 },
+            }
+        },
+        { 
+        # sort by date
+        '$sort': {
+            'date': 1,
+            }
+        }
+    ]
+
+    result = db_vls.datas.aggregate(pipeline)
+    
+    return result
