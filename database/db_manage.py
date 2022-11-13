@@ -18,8 +18,6 @@ def init_vlille_data():
     try:
         try:
             db_vls.stations.drop()
-            db_vls.datas.drop()
-            db_vls.places.drop()
             logger.debug('stations collection dropped sucessfuly')
         except Exception as e:
             logger.error(e)
