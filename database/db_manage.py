@@ -39,7 +39,7 @@ def update_vlille_data():
 
     for data in datas:
         db_vls.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, {"$set": data}, upsert=True)
-        logger.debug(f"Element {datas.index(data)+1}/{nb_data_to_insert} updated!")
+        logger.debug(f"Element {datas.index(data)+1}/{nb_data_to_insert} updated! with 'date': 'date': {data['date']}, 'station_id': {data['station_id']}")
 
     logger.info(f'{nb_data_to_insert} Stations have been updated!')
 
