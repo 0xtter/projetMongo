@@ -9,7 +9,7 @@
             "name": "Python : fichier actif",
             "type": "python",
             "request": "launch",
-            "program": "main.py",
+            "program": "business.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }

@@ -1,4 +1,5 @@
 import logging
+import logging.config
 import vlille.vlille_api as vlille_api
 from pymongo import GEOSPHERE
 from bson.son import SON
@@ -17,6 +18,8 @@ def init_vlille_data():
     try:
         try:
             db_vls.stations.drop()
+            db_vls.datas.drop()
+            db_vls.places.drop()
             logger.debug('stations collection dropped sucessfuly')
         except Exception as e:
             logger.error(e)
@@ -24,7 +27,7 @@ def init_vlille_data():
         
         db_vls.stations.create_index([("geometry", GEOSPHERE)])
         vlilles = vlille_api.get_vlille()
-        db_vls.stations.insert_many(vlilles)
+        db_vls.stations.insert_many(vlille_api.vlilles_to_insert(vlilles))
     except Exception as e:
         logger.error(e)
         raise ValueError("Unknown error, data were not inserted in database : {}".format(e))
@@ -38,27 +41,44 @@ def update_vlille_data():
 
     for data in datas:
         db_vls.datas.update_one({'date': data["date"], "station_id": data["station_id"]}, {"$set": data}, upsert=True)
-                            
         logger.debug(f"Element {datas.index(data)+1}/{nb_data_to_insert} updated!")
+
     logger.info(f'{nb_data_to_insert} Stations have been updated!')
 
 
-def get_vlille_around(x, y, range = 10):
+def get_vlille_around(lon, lat, distance_meters = 1000):
+    """
+    Get all vlille around a certain longitude and latitude within a certain distance.
+    
+    Args:
+        lon (float): The longitude of the point
+        lat (float): The latitude of the point
+        distance_meters (int, optional): The range to look for a vlille. Defaults to 1000.
+
+    Returns:
+        _type_: All vlille found in the area
+    """    
+    distance = distance_meters/6371000 #Converting meters into radiants
     logger.info(f'Finding available vlille around...')
     try:
-        vlille_around=db_vls.stations.find({'geometry':{"$nearSphere" : [ x , y ],'$maxDistance': range}})
+        vlille_around=list(db_vls.stations.aggregate([{'$geoNear':{'near': [lon, lat],
+                 'distanceField': "distance",
+                 'maxDistance' : distance,
+                 'spherical' : 'True',
+                 'distanceMultiplier': 6371000 }}]))
 
         size = 0
         for doc in vlille_around:
             size+=1
             logger.debug(f'Found {doc}')
             
-        logger.info(f'Found {size} available vlille around ({x} , {y}) in a range of {range}')
+        logger.info(f'Found {size} available vlille around ({lon} , {lat}) in a range of {distance_meters}')
 
         return vlille_around
 
     except Exception as e:
-        logger.error(f'Something went wrong finding vlille around in a range of {range}')
+        logger.error(f'Something went wrong finding vlille around in a range of {distance_meters}')
+        logger.error(e)
     logger.info("No vlille Near")
 
 
@@ -74,13 +94,13 @@ def get_stations_by_name(name):
     """
     logger.info(f"Finding stations whose name includes substring : {name} ")
     try:
-        query = {'fields.nom': {'$regex': f"{name}", '$options': 'i' } }    # i for case insensitive
+        query = {'name': {'$regex': f"{name}", '$options': 'i' } }    # i for case insensitive
         stations_cursor = db_vls.stations.find(query)
         
         size = 0
         for station in stations_cursor:
             size+=1
-            logger.debug("Found '{}'".format(station["fields"]["nom"]))
+            logger.debug("Found '{}'".format(station["name"]))
 
         logger.info(f"Found {size} stations including substring '{name}' in its name.")
 
@@ -89,6 +109,30 @@ def get_stations_by_name(name):
     except Exception as e:
         logger.error(f"Something went wrong searching station {name} : {e}")
 
+def deactivate_stations(_ids):
+    """
+    Deactivate all stations given their id. It will set as 'HORS SERVICE' those stations.
+    Args:
+        _ids (list): list of the id of the stations to deactivate.
+
+    Returns:
+        Boolean: False if one or more stations has not been deactivated, else True.
+    """
+    results = []
+    for id in _ids:
+        logger.info(f"deactivating stations _id={id}")
+        try:
+            result = update_station(id,{'etat' : 'HORS SERVICE'})
+            results.append(result)
+
+            if result:                
+                logger.debug(f"Station id {id} deactivated.")
+            else:
+                logger.debug(f"Station id {id} not deactivated.")
+        except Exception as e:
+            logger.error(f"Something went wrong when deactivating station {id} : {e}")
+
+    return False if False in results else True
 
 def update_station(_id, newvalues_dict):
     """ Update station values
@@ -126,8 +170,6 @@ def delete_station(_id):
 
     Args:
         _id (bson.objectid.ObjectId): id de la station
-        newvalues_dict (_type_): dictionnaire des valeurs à modifier. Par exemple :
-        { 'fields.etat': "EN TEST", 'fields.nom: "BetaTest" }
     
     Returns:
         Boolean: True if deleted, False otherwise
@@ -169,7 +211,7 @@ def get_stations_under_ratio(ratio_level=0.2):
         '$lookup': {
             'from': 'stations', 
             'localField': 'station_id',
-            'foreignField': 'fields.libelle', 
+            'foreignField': 'source.id_ext', 
             'as': 'station_info'
             }
         },
@@ -188,11 +230,11 @@ def get_stations_under_ratio(ratio_level=0.2):
         },
         { # Add station name to output doc
         '$addFields': {
-            'nom'  : "$station_info.fields.nom"
+            'name'  : "$station_info.name"
             }
         },
         {
-            '$unwind': "$nom"
+            '$unwind': "$name"
         },
         {
         # set output doc 
@@ -205,7 +247,7 @@ def get_stations_under_ratio(ratio_level=0.2):
             'hour': { '$hour': "$date" },
             'bike_availbale': 1,
             'stand_availbale': 1,
-            'nom': 1,
+            'name': 1,
             }
         },
         { 

@@ -1,5 +1,6 @@
 # QUESTION 4, BUSINESS PROGRAM
 import json
+import logging
 
 import jsbeautifier
 from bson import json_util
@@ -7,6 +8,11 @@ from bson import json_util
 import database.db_manage
 from db_conn import db_vls
 
+
+def setupLogger():
+    global logger
+    logging.config.fileConfig('logging.conf')
+    logger = logging.getLogger('project')
 
 def display_title(msg):
     print(f"\n#---- {msg} ----#\n")
@@ -82,7 +88,7 @@ def display_business_menu():
     (1) - find station with name
     (2) - update a station
     (3) - delete a station
-    (4) - desactivate all station in an area
+    (4) - deactivate all station in an area
     (5) - give all stations with a ratio bike/total_stand under 20% between 18h and 19h00 (monday to friday)
     """
     display_text(msg)
@@ -96,7 +102,7 @@ def display_business_menu():
     elif choice == 3:
         return menu_delete_station()
     elif choice == 4:
-        pass
+        return menu_deactivate_all_station_in_area()
     elif choice == 5:
         return give_stations_under_ratio()
 
@@ -134,13 +140,13 @@ def menu_update_station():
     for station in stations_cursor:
         found += 1
         choices[found] = station
-        print("({}) - {} ".format(found, station["fields"]["nom"]))
+        print("({}) - {} ".format(found, station["name"]))
 
     if not found:
         display_text("No station registered.")
         return display_business_menu()
 
-    idx = integer_input("To update a station, enter the associated integer :", min=1, max=len(choices))
+    idx = integer_input("To update a station, enter the associated integer", min=1, max=len(choices))
     choosen_station = choices[idx]
 
     # display data of the choosen station
@@ -192,19 +198,19 @@ def menu_delete_station():
     for station in stations_cursor:
         found += 1
         choices[found] = station
-        print("({}) - {} ".format(found, station["fields"]["nom"]))
+        print("({}) - {} ".format(found, station["name"]))
 
     if not found:
         display_text("No station registered.")
         return display_business_menu()
 
-    idx = integer_input("To delete a station, enter the associated integer :", min=1, max=len(choices))
+    idx = integer_input("To delete a station, enter the associated integer", min=1, max=len(choices))
     choosen_station = choices[idx]
 
     # Confirm deletion
 
     display_title("Confirm DELETION")
-    confirmation = input("Type 'delete' to confirm deletion of {} : ".format(choosen_station["fields"]["nom"]))
+    confirmation = input("Type 'delete' to confirm deletion of {} : ".format(choosen_station["name"]))
     
     if confirmation == 'delete':
         is_deleted = database.db_manage.delete_station(choosen_station["_id"])
@@ -219,7 +225,48 @@ def menu_delete_station():
     input("Press ENTER to continue...")
 
     return display_business_menu()
+
+def menu_deactivate_all_station_in_area():
+    while True:
+        lon = input("Enter longitude (3.048761 for ISEN Lille) : ")
+        lat = input("Enter latitude (50.634206 for ISEN Lille) : ")
+        try:
+            lon_float = float(lon)
+            lat_float = float(lat)
+            break
+        except Exception as e:
+            display_text("Invalid choice, please try again.")
+
+    range = integer_input("Enter the range in meter", 0, 1000000)
     
+    result = database.db_manage.get_vlille_around(lon_float,lat_float,range)
+
+    found = 0
+    ids = []
+    for station in result:
+        found += 1
+        ids.append(station["_id"])
+        display_beautiful_dict(station)
+    
+    if not found:
+        display_title("No station found.")
+    else:
+        display_title("Confirm DEACTIVATION")
+    confirmation = input(f"Type 'deactivate' to confirm deactivation of {found} stations : ")
+    
+    if confirmation == 'deactivate':
+        is_deleted = database.db_manage.deactivate_stations(ids)
+
+        if is_deleted:
+            display_title("Stations deactivated")
+        else:
+            display_title("Stations not deactivate")
+    else:
+        display_text("Abort deactivation")
+
+        input("Press ENTER to continue...")
+
+    return display_business_menu()
 
 def give_stations_under_ratio():
 
@@ -239,4 +286,7 @@ def give_stations_under_ratio():
 
 
 if __name__ == "__main__":
+    setupLogger()
+    database.db_manage.init_vlille_data()
+    database.db_manage.update_vlille_data()
     display_business_menu()
